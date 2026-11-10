@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ThreatMap - GeoIP Dashboard</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0b1120;
+      color: #f8fafc;
+      margin: 0;
+      padding: 24px;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    .card {
+      background: #162032;
+      border: 1px solid #334460;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="password"] {
+      background: #0b1120;
+      border: 1px solid #334460;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      width: 260px;
+    }
+    button {
+      background: #38bdf8;
+      color: #0b1120;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background: #7dd3fc; }
+    .flash { color: #facc15; margin-bottom: 12px; }
+    
+    /* SVG Map Styles */
+    .map-frame {
+      width: 100%;
+      height: 400px;
+      background: #030712;
+      border: 1px solid #334460;
+      border-radius: 6px;
+      display: block;
+    }
+    .grid-line { stroke: #1e293b; stroke-width: 1; }
+    .ping {
+      fill: #38bdf8;
+      stroke: #ffffff;
+      stroke-width: 1.5;
+      transition: r 0.2s;
+    }
+    .ping:hover { r: 8; fill: #facc15; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if mode == "register" %}
+    <div class="card">
+      <h2>Register</h2>
+      <form method="POST">
+        <p><input type="text" name="username" placeholder="Username" required></p>
+        <p><input type="password" name="password" placeholder="Password" required></p>
+        <button type="submit">Create Account</button>
+      </form>
+      <p><small>Already registered? <a href="/login" style="color:#38bdf8;">Login here</a></small></p>
+    </div>
+
+  {% elif mode == "login" %}
+    <div class="card">
+      <h2>Login</h2>
+      <form method="POST">
+        <p><input type="text" name="username" placeholder="Username" required></p>
+        <p><input type="password" name="password" placeholder="Password" required></p>
+        <button type="submit">Sign In</button>
+      </form>
+      <p><small>Need an account? <a href="/register" style="color:#38bdf8;">Register here</a></small></p>
+    </div>
+
+  {% else %}
+    <!-- Dashboard Mode -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>ThreatMap Dashboard (Welcome, {{ session['username'] }})</h2>
+      <a href="/logout" style="color:#f87171;">Logout</a>
+    </div>
+
+    <div class="card">
+      <form method="POST">
+        <label for="ip">Lookup Public IP:</label>
+        <input type="text" id="ip" name="ip" placeholder="e.g. 8.8.8.8" required>
+        <button type="submit">Plot on Map</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Plotted Visualisation (800 x 400 SVG Canvas)</h3>
+      <svg viewBox="0 0 800 400" class="map-frame">
+        <image
+            href="{{ url_for('static', filename='world.svg') }}"
+            x="0"
+            y="0"
+            width="800"
+            height="400"
+            preserveAspectRatio="none"
+        />
+        <!-- Equator and Prime Meridian Reference Grids -->
+        <line x1="0" y1="200" x2="800" y2="200" class="grid-line" stroke-dasharray="4" />
+        <line x1="400" y1="0" x2="400" y2="400" class="grid-line" stroke-dasharray="4" />
+
+        <!-- Render each database point dynamically -->
+        {% for point in history %}
+          <circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" class="ping">
+            <title>{{ point.ip }} — {{ point.city }}, {{ point.country }}</title>
+          </circle>
+        {% endfor %}
+      </svg>
+      <p><small style="color: #94a3b8;">Hover over any marker to inspect IP address metadata.</small></p>
+    </div>
+
+    <div class="card">
+      <h3>Lookup Log</h3>
+      <ul>
+        {% for item in history %}
+          <li><strong>{{ item.ip }}</strong>: {{ item.city }}, {{ item.country }} (Coordinates: {{ item.lat }}, {{ item.lon }})</li>
+        {% else %}
+          <li>No queries yet. Submit an IP above to begin plotting.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
