@@ -58,6 +58,14 @@
       transition: r 0.2s;
     }
     .ping:hover { r: 8; fill: #facc15; }
+    @keyframes pulse {
+      0% { r: 4; opacity: 1; }
+      100% { r: 16; opacity: 0; }
+    }
+
+    .ping-latest {
+      animation: pulse 1.5s ease-out infinite;
+    }
     </style>
   </head>
   <body>
@@ -129,7 +137,7 @@
             <line x1="400" y1="0" x2="400" y2="400" class="grid-line" stroke-dasharray="4" />
             <!-- Render each database point dynamically -->
             {% for point in history %}
-              <circle cx="{{ point.x + (loop.index0 % 3) - 1 }}" cy="{{ point.y + ((loop.index0 // 3) % 3) - 1 }}" r="5" class="ping">
+              <circle cx="{{ point.x + (loop.index0 % 3) - 1 }}" cy="{{ point.y + ((loop.index0 // 3) % 3) - 1 }}" r="5" class="ping {% if loop.first %}ping-latest{% endif %}">
               <title>{{ point.ip }} — {{ point.city }}, {{ point.country }}</title>
               </circle>
             {% endfor %}
