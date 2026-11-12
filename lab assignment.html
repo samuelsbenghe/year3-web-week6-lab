@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Department of Computing, Goldsmiths, University of London" />
+  <title>Lab 06: Full-Stack GeoIP &amp; Vector Mapping with Flask</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+}
+pre.numberSource { margin-left: 3em; padding-left: 4px; }
+div.sourceCode
+{ color: #cccccc; background-color: #303030; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ffcfaf; } 
+code span.an { color: #7f9f7f; font-weight: bold; } 
+code span.at { } 
+code span.bn { color: #dca3a3; } 
+code span.bu { } 
+code span.cf { color: #f0dfaf; } 
+code span.ch { color: #dca3a3; } 
+code span.cn { color: #dca3a3; font-weight: bold; } 
+code span.co { color: #7f9f7f; } 
+code span.cv { color: #7f9f7f; font-weight: bold; } 
+code span.do { color: #7f9f7f; } 
+code span.dt { color: #dfdfbf; } 
+code span.dv { color: #dcdccc; } 
+code span.er { color: #c3bf9f; } 
+code span.ex { } 
+code span.fl { color: #c0bed1; } 
+code span.fu { color: #efef8f; } 
+code span.im { } 
+code span.in { color: #7f9f7f; font-weight: bold; } 
+code span.kw { color: #f0dfaf; } 
+code span.op { color: #f0efd0; } 
+code span.ot { color: #efef8f; } 
+code span.pp { color: #ffcfaf; font-weight: bold; } 
+code span.sc { color: #dca3a3; } 
+code span.ss { color: #cc9393; } 
+code span.st { color: #cc9393; } 
+code span.va { } 
+code span.vs { color: #cc9393; } 
+code span.wa { color: #7f9f7f; font-weight: bold; } 
+</style>
+  <style type="text/css">:root {
+
+--bg: #0b1120;
+--surface: #162032;
+--surface-hover: #1e2c44;
+--border: #334460;
+
+--text-primary: #f8fafc; 
+--text-secondary: #cbd5e1; 
+--text-muted: #94a3b8; 
+
+--accent: #7dd3fc; 
+--link-hover: #bae6fd; 
+--code-bg: #030712; 
+--code-text: #f0fdf4; 
+--code-border: #475569;
+}
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+}
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+background-color: var(--bg);
+color: var(--text-secondary);
+line-height: 1.65;
+padding: 36px 24px;
+max-width: 920px;
+margin: 0 auto;
+}
+
+h1, h2, h3, h4 {
+color: var(--text-primary);
+font-weight: 700;
+line-height: 1.3;
+}
+h1 {
+font-size: 2.1rem;
+border-bottom: 2px solid var(--border);
+padding-bottom: 14px;
+margin-bottom: 24px;
+}
+h2 {
+font-size: 1.45rem;
+margin-top: 40px;
+margin-bottom: 16px;
+border-bottom: 1px solid var(--border);
+padding-bottom: 8px;
+}
+h3 {
+font-size: 1.2rem;
+margin-top: 28px;
+margin-bottom: 10px;
+color: var(--accent);
+}
+p {
+margin-bottom: 18px;
+}
+
+a {
+color: var(--accent);
+text-decoration: underline;
+text-underline-offset: 3px;
+transition: color 0.15s;
+}
+a:hover, a:focus-visible {
+color: var(--link-hover);
+outline: 2px solid var(--accent);
+outline-offset: 2px;
+}
+
+ul, ol {
+margin-left: 28px;
+margin-bottom: 20px;
+}
+li {
+margin-bottom: 8px;
+}
+
+p code, li code, td code {
+font-family: "JetBrains Mono", "Fira Code", monospace;
+font-size: 0.9em;
+background-color: var(--surface);
+color: var(--text-primary);
+padding: 2px 7px;
+border-radius: 4px;
+border: 1px solid var(--border);
+}
+
+pre {
+background-color: var(--code-bg) !important;
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 16px 20px;
+overflow-x: auto;
+margin-bottom: 24px;
+line-height: 1.5;
+}
+pre code {
+background-color: transparent !important;
+border: none;
+padding: 0;
+color: var(--text-secondary);
+}
+
+#TOC {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 20px 24px;
+margin-bottom: 36px;
+}
+#TOC > ul {
+margin-left: 0;
+list-style-type: none;
+}
+#TOC a {
+text-decoration: none;
+color: var(--text-primary);
+font-weight: 500;
+}
+#TOC a:hover {
+text-decoration: underline;
+color: var(--accent);
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+margin-bottom: 28px;
+background: var(--surface);
+border-radius: 6px;
+overflow: hidden;
+border: 1px solid var(--border);
+}
+th, td {
+padding: 12px 16px;
+text-align: left;
+border-bottom: 1px solid var(--border);
+}
+th {
+background: #060b16;
+color: var(--text-primary);
+font-weight: 600;
+text-transform: uppercase;
+font-size: 0.78rem;
+letter-spacing: 0.05em;
+}
+tr:hover td {
+background: var(--surface-hover);
+}
+
+blockquote {
+border-left: 4px solid var(--accent);
+background: #0f1c30;
+padding: 14px 20px;
+border-radius: 0 8px 8px 0;
+margin-bottom: 24px;
+color: var(--text-secondary);
+}
+blockquote p:last-child {
+margin-bottom: 0;
+}
+hr {
+border: 0;
+height: 1px;
+background: var(--border);
+margin: 40px 0;
+}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Lab 06: Full-Stack GeoIP &amp; Vector Mapping with
+Flask</h1>
+<p class="subtitle">BSc Computer Science · Dynamic Web Applications</p>
+<p class="author">Department of Computing, Goldsmiths, University of
+London</p>
+<p class="date">Academic Year 2026/27</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction-learning-goals" id="toc-introduction-learning-goals">Introduction &amp; Learning
+Goals</a></li>
+<li><a href="#prerequisites-setup" id="toc-prerequisites-setup">Prerequisites &amp; Setup</a></li>
+<li><a href="#step-1-the-minimal-server-authentication" id="toc-step-1-the-minimal-server-authentication">Step 1: The Minimal
+Server &amp; Authentication</a></li>
+<li><a href="#step-2-safe-ip-ingestion-upstream-api-calling" id="toc-step-2-safe-ip-ingestion-upstream-api-calling">Step 2: Safe IP
+Ingestion &amp; Upstream API Calling</a></li>
+<li><a href="#step-3-projection-mathematics-latitudelongitude-to-svg" id="toc-step-3-projection-mathematics-latitudelongitude-to-svg">Step 3:
+Projection Mathematics (Latitude/Longitude to SVG)</a></li>
+<li><a href="#step-4-the-interface-svg-map-canvas" id="toc-step-4-the-interface-svg-map-canvas">Step 4: The Interface &amp;
+SVG Map Canvas</a></li>
+<li><a href="#step-5-testing-your-full-application" id="toc-step-5-testing-your-full-application">Step 5: Testing Your Full
+Application</a></li>
+<li><a href="#homework-independent-expansion-tasks-3-hours" id="toc-homework-independent-expansion-tasks-3-hours">Homework &amp;
+Independent Expansion Tasks (~3 Hours)</a></li>
+</ul>
+</nav>
+<h1 id="introduction-learning-goals">Introduction &amp; Learning
+Goals</h1>
+<p>In this lab, you will build a complete, functional web service from
+scratch using <strong>Flask</strong>, a lightweight Python web
+framework. Rather than relying on heavy third-party libraries or
+monolithic abstractions, you will connect the essential tiers of web
+engineering yourself:</p>
+<ol type="1">
+<li><strong>Authentication &amp; Session State:</strong> Verifying user
+credentials and setting cryptographically signed cookies.</li>
+<li><strong>Network Input &amp; Basic Security:</strong> Accepting IP
+addresses safely without exposing private internal networks (SSRF
+defense).</li>
+<li><strong>Database Persistence:</strong> Storing user query history
+using SQLite and parameterized queries.</li>
+<li><strong>Vector Data Visualisation:</strong> Converting raw
+geographic coordinates into an inline Scalable Vector Graphic (SVG) map
+using first-principles geometry.</li>
+</ol>
+<p>You do <strong>not</strong> need administrative (<code>sudo</code>)
+privileges for this lab. Everything runs inside a local virtual
+environment in your user space on port <code>5001</code>.</p>
+<hr />
+<h1 id="prerequisites-setup">Prerequisites &amp; Setup</h1>
+<p>Open your terminal, navigate to your workspace, and set up an
+isolated Python environment:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Create a project directory and enter it</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/dwa-lab6</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/dwa-lab6</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Create a virtual environment</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> venv venv</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Activate the virtual environment</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> venv/bin/activate</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Install Flask and Requests (no sudo needed)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install flask requests</span></code></pre></div>
+<p>Verify your installation:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-c</span> <span class="st">&quot;import flask, requests; print(&#39;Environment ready!&#39;)&quot;</span></span></code></pre></div>
+<hr />
+<h1 id="step-1-the-minimal-server-authentication">Step 1: The Minimal
+Server &amp; Authentication</h1>
+<p>Instead of managing multiple files across different folders, we will
+keep our backend code in a single file called <code>app.py</code> and
+our interface in <code>templates/index.html</code>.</p>
+<p>Create the template directory:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> templates</span></code></pre></div>
+<p>Now, create <code>app.py</code> in your editor and add the baseline
+server with user registration and login handling:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sqlite3</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> wraps</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flask <span class="im">import</span> Flask, render_template, request, redirect, url_for, session, flash</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> werkzeug.security <span class="im">import</span> generate_password_hash, check_password_hash</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>app <span class="op">=</span> Flask(<span class="va">__name__</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># The secret key is used to sign session cookies so users cannot tamper with them</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>app.secret_key <span class="op">=</span> <span class="st">&quot;development-secret-key-change-in-production&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>DATABASE <span class="op">=</span> <span class="st">&quot;threatmap.db&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_db():</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Connects to SQLite and returns rows that behave like Python dictionaries.&quot;&quot;&quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    conn <span class="op">=</span> sqlite3.<span class="ex">connect</span>(DATABASE)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    conn.row_factory <span class="op">=</span> sqlite3.Row</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> conn</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> init_db():</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Creates our database tables on first launch.&quot;&quot;&quot;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> get_db() <span class="im">as</span> conn:</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        conn.execute(<span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="st">            CREATE TABLE IF NOT EXISTS users (</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="st">                id INTEGER PRIMARY KEY AUTOINCREMENT,</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="st">                username TEXT UNIQUE NOT NULL,</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="st">                password_hash TEXT NOT NULL</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="st">            );</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;&quot;&quot;</span>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        conn.execute(<span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="st">            CREATE TABLE IF NOT EXISTS lookups (</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="st">                id INTEGER PRIMARY KEY AUTOINCREMENT,</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="st">                user_id INTEGER NOT NULL,</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="st">                ip TEXT NOT NULL,</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="st">                city TEXT,</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="st">                country TEXT,</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="st">                lat REAL,</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="st">                lon REAL,</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="st">                x REAL,</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="st">                y REAL,</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="st">                FOREIGN KEY (user_id) REFERENCES users(id)</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="st">            );</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;&quot;&quot;</span>)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>        conn.commit()</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Run database setup immediately</span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>init_db()</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> login_required(f):</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;A decorator that ensures a user is logged in before accessing a route.&quot;&quot;&quot;</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">@wraps</span>(f)</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> decorated_function(<span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">&quot;user_id&quot;</span> <span class="kw">not</span> <span class="kw">in</span> session:</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Please log in first.&quot;</span>)</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;login&quot;</span>))</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> f(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> decorated_function</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&quot;/register&quot;</span>, methods<span class="op">=</span>[<span class="st">&quot;GET&quot;</span>, <span class="st">&quot;POST&quot;</span>])</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> register():</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> request.method <span class="op">==</span> <span class="st">&quot;POST&quot;</span>:</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>        username <span class="op">=</span> request.form.get(<span class="st">&quot;username&quot;</span>, <span class="st">&quot;&quot;</span>).strip()</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>        password <span class="op">=</span> request.form.get(<span class="st">&quot;password&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> username <span class="kw">or</span> <span class="kw">not</span> password:</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Username and password are required.&quot;</span>)</span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;register&quot;</span>))</span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>        hashed <span class="op">=</span> generate_password_hash(password)</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>            <span class="cf">with</span> get_db() <span class="im">as</span> conn:</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>                conn.execute(</span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;INSERT INTO users (username, password_hash) VALUES (?, ?)&quot;</span>,</span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>                    (username, hashed)</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>                conn.commit()</span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Account created! Please log in.&quot;</span>)</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;login&quot;</span>))</span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> sqlite3.IntegrityError:</span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Username already exists.&quot;</span>)</span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;register&quot;</span>))</span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> render_template(<span class="st">&quot;index.html&quot;</span>, mode<span class="op">=</span><span class="st">&quot;register&quot;</span>)</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&quot;/login&quot;</span>, methods<span class="op">=</span>[<span class="st">&quot;GET&quot;</span>, <span class="st">&quot;POST&quot;</span>])</span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> login():</span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> request.method <span class="op">==</span> <span class="st">&quot;POST&quot;</span>:</span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>        username <span class="op">=</span> request.form.get(<span class="st">&quot;username&quot;</span>, <span class="st">&quot;&quot;</span>).strip()</span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>        password <span class="op">=</span> request.form.get(<span class="st">&quot;password&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> get_db() <span class="im">as</span> conn:</span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>            user <span class="op">=</span> conn.execute(</span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;SELECT * FROM users WHERE username = ?&quot;</span>, (username,)</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>            ).fetchone()</span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> user <span class="kw">and</span> check_password_hash(user[<span class="st">&quot;password_hash&quot;</span>], password):</span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>            session[<span class="st">&quot;user_id&quot;</span>] <span class="op">=</span> user[<span class="st">&quot;id&quot;</span>]</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>            session[<span class="st">&quot;username&quot;</span>] <span class="op">=</span> user[<span class="st">&quot;username&quot;</span>]</span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;dashboard&quot;</span>))</span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>        flash(<span class="st">&quot;Invalid username or password.&quot;</span>)</span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> redirect(url_for(<span class="st">&quot;login&quot;</span>))</span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> render_template(<span class="st">&quot;index.html&quot;</span>, mode<span class="op">=</span><span class="st">&quot;login&quot;</span>)</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&quot;/logout&quot;</span>)</span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logout():</span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>    session.clear()</span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a>    flash(<span class="st">&quot;Logged out successfully.&quot;</span>)</span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> redirect(url_for(<span class="st">&quot;login&quot;</span>))</span></code></pre></div>
+<h3 id="customisation-deep-dive-1">Customisation &amp; Deep Dive 1</h3>
+<ul>
+<li><strong>Concept:</strong> Notice how
+<code>generate_password_hash</code> automatically creates an encrypted,
+salted hash rather than storing plain text.</li>
+<li><strong>Ideas for expansion:</strong>
+<ol type="1">
+<li>Add a length constraint checking that passwords are at least 8
+characters long before hashing.</li>
+<li>Display the logged-in user’s username inside the navigation
+bar.</li>
+<li>Add a flash message confirming when a user registers
+successfully.</li>
+</ol></li>
+<li><strong>Documentation:</strong> <a href="https://flask.palletsprojects.com/en/latest/quickstart/#sessions">Flask
+Quickstart on Sessions</a></li>
+</ul>
+<hr />
+<h1 id="step-2-safe-ip-ingestion-upstream-api-calling">Step 2: Safe IP
+Ingestion &amp; Upstream API Calling</h1>
+<p>When our server accepts an IP address from a form to look up its
+location, we have to make an outbound HTTP call.</p>
+<p>If a user enters <code>127.0.0.1</code> or <code>localhost</code>,
+our server might accidentally expose its own local administrative ports.
+This is called <strong>Server-Side Request Forgery (SSRF)</strong>. We
+can prevent it with Python’s built-in <code>ipaddress</code> module by
+enforcing that queries must target <strong>public, global internet
+addresses</strong>.</p>
+<p>Append this helper function and your dashboard route to
+<code>app.py</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ipaddress</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_safe_public_ip(ip_str):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Validates that a string is a real IP and is safe to query externally.&quot;&quot;&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        ip <span class="op">=</span> ipaddress.ip_address(ip_str.strip())</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># is_global ensures it is not localhost (127.0.0.1) or private (192.168.x.x, 10.x.x.x)</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ip.is_global</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_coordinates(ip_str):</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Queries a free public API for IP coordinate data.&quot;&quot;&quot;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    url <span class="op">=</span> <span class="ss">f&quot;http://ip-api.com/json/</span><span class="sc">{</span>ip_str<span class="sc">}</span><span class="ss">&quot;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> requests.get(url, timeout<span class="op">=</span><span class="fl">3.0</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> res.json()</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> data.get(<span class="st">&quot;status&quot;</span>) <span class="op">==</span> <span class="st">&quot;success&quot;</span>:</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> {</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;lat&quot;</span>: data.get(<span class="st">&quot;lat&quot;</span>),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;lon&quot;</span>: data.get(<span class="st">&quot;lon&quot;</span>),</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;city&quot;</span>: data.get(<span class="st">&quot;city&quot;</span>, <span class="st">&quot;Unknown&quot;</span>),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;country&quot;</span>: data.get(<span class="st">&quot;country&quot;</span>, <span class="st">&quot;Unknown&quot;</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> requests.RequestException:</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
+<h3 id="customisation-deep-dive-2">Customisation &amp; Deep Dive 2</h3>
+<ul>
+<li><strong>Concept:</strong> Network boundaries. We never trust client
+input when triggering backend socket connections.</li>
+<li><strong>Ideas for expansion:</strong>
+<ol type="1">
+<li>Test what happens when you pass <code>127.0.0.1</code> into
+<code>is_safe_public_ip()</code> inside an interactive
+<code>python3</code> terminal.</li>
+<li>Inspect the HTTP status code returned by <code>requests.get()</code>
+using <code>res.status_code</code>.</li>
+<li>Add error handling for when the external API rate-limits your
+requests (HTTP 429).</li>
+</ol></li>
+<li><strong>Documentation:</strong> <a href="https://docs.python.org/3/library/ipaddress.html">Python ipaddress
+Documentation</a></li>
+</ul>
+<hr />
+<h1 id="step-3-projection-mathematics-latitudelongitude-to-svg">Step 3:
+Projection Mathematics (Latitude/Longitude to SVG)</h1>
+<p>A world map is traditionally shown as an <strong>Equirectangular
+Projection</strong>: * Longitude ranges from <strong>-180°</strong> to
+<strong>+180°</strong> (horizontal width). * Latitude ranges from
+<strong>-90°</strong> to <strong>+90°</strong> (vertical height).</p>
+<p>Computers render graphics starting from <code>(0, 0)</code> in the
+<strong>top-left corner</strong>. This means that while
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><msup><mn>90</mn><mo>∘</mo></msup></mrow><annotation encoding="application/x-tex">+90^\circ</annotation></semantics></math>
+latitude is at the top of the globe, screen pixels increase downwards
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">Y=0</annotation></semantics></math>
+is at the top).</p>
+<p>Here is the straightforward conversion for an SVG canvas sized
+<strong>800 pixels wide by 400 pixels high</strong>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">X</mtext><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">lon</mtext><mo>+</mo><mn>180</mn><mo stretchy="false" form="postfix">)</mo><mo>×</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mn>800</mn><mn>360</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{X} = (\text{lon} + 180) \times \left(\frac{800}{360}\right)</annotation></semantics></math>
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Y</mtext><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>90</mn><mo>−</mo><mtext mathvariant="normal">lat</mtext><mo stretchy="false" form="postfix">)</mo><mo>×</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mn>400</mn><mn>180</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{Y} = (90 - \text{lat}) \times \left(\frac{400}{180}\right)</annotation></semantics></math></p>
+<p>Add this calculation function to <code>app.py</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> project_lat_lon(lat, lon, width<span class="op">=</span><span class="dv">800</span>, height<span class="op">=</span><span class="dv">400</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Converts Latitude/Longitude degrees to (x, y) pixels on our map.&quot;&quot;&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> (lon <span class="op">+</span> <span class="fl">180.0</span>) <span class="op">*</span> (width <span class="op">/</span> <span class="fl">360.0</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> (<span class="fl">90.0</span> <span class="op">-</span> lat) <span class="op">*</span> (height <span class="op">/</span> <span class="fl">180.0</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">round</span>(x, <span class="dv">1</span>), <span class="bu">round</span>(y, <span class="dv">1</span>)</span></code></pre></div>
+<p>Now, wire up the main authenticated <code>/</code> dashboard
+route:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&quot;/&quot;</span>, methods<span class="op">=</span>[<span class="st">&quot;GET&quot;</span>, <span class="st">&quot;POST&quot;</span>])</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">@login_required</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dashboard():</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> request.method <span class="op">==</span> <span class="st">&quot;POST&quot;</span>:</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        target_ip <span class="op">=</span> request.form.get(<span class="st">&quot;ip&quot;</span>, <span class="st">&quot;&quot;</span>).strip()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> is_safe_public_ip(target_ip):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Invalid or private IP address. Please enter a public address (e.g. 8.8.8.8).&quot;</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;dashboard&quot;</span>))</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        geo <span class="op">=</span> get_coordinates(target_ip)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> geo:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            flash(<span class="st">&quot;Could not locate that IP address.&quot;</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> redirect(url_for(<span class="st">&quot;dashboard&quot;</span>))</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Calculate map coordinates</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        px_x, px_y <span class="op">=</span> project_lat_lon(geo[<span class="st">&quot;lat&quot;</span>], geo[<span class="st">&quot;lon&quot;</span>])</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Persist into SQLite using safe parameterized bindings (?)</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> get_db() <span class="im">as</span> conn:</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>            conn.execute(<span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="st">                INSERT INTO lookups (user_id, ip, city, country, lat, lon, x, y)</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="st">                VALUES (?, ?, ?, ?, ?, ?, ?, ?)</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="st">            &quot;&quot;&quot;</span>, (session[<span class="st">&quot;user_id&quot;</span>], target_ip, geo[<span class="st">&quot;city&quot;</span>], geo[<span class="st">&quot;country&quot;</span>], </span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>                  geo[<span class="st">&quot;lat&quot;</span>], geo[<span class="st">&quot;lon&quot;</span>], px_x, px_y))</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            conn.commit()</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        flash(<span class="ss">f&quot;Plotted </span><span class="sc">{</span>target_ip<span class="sc">}</span><span class="ss"> in </span><span class="sc">{</span>geo[<span class="st">&#39;city&#39;</span>]<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>geo[<span class="st">&#39;country&#39;</span>]<span class="sc">}</span><span class="ss">!&quot;</span>)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> redirect(url_for(<span class="st">&quot;dashboard&quot;</span>))</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch past searches for this user</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> get_db() <span class="im">as</span> conn:</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        history <span class="op">=</span> conn.execute(</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;SELECT * FROM lookups WHERE user_id = ? ORDER BY id DESC&quot;</span>,</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>            (session[<span class="st">&quot;user_id&quot;</span>],)</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        ).fetchall()</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> render_template(<span class="st">&quot;index.html&quot;</span>, mode<span class="op">=</span><span class="st">&quot;dashboard&quot;</span>, history<span class="op">=</span>history)</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    app.run(port<span class="op">=</span><span class="dv">5001</span>, debug<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<hr />
+<h1 id="step-4-the-interface-svg-map-canvas">Step 4: The Interface &amp;
+SVG Map Canvas</h1>
+<p>Create <code>templates/index.html</code>. This single template
+handles all three application modes: registration, login, and the visual
+mapping dashboard.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;!DOCTYPE</span> html<span class="dt">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">html</span><span class="ot"> lang</span><span class="op">=</span><span class="st">&quot;en&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">head</span><span class="dt">&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&lt;</span><span class="kw">meta</span><span class="ot"> charset</span><span class="op">=</span><span class="st">&quot;UTF-8&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&lt;</span><span class="kw">title</span><span class="dt">&gt;</span>ThreatMap - GeoIP Dashboard<span class="dt">&lt;/</span><span class="kw">title</span><span class="dt">&gt;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&lt;</span><span class="kw">style</span><span class="dt">&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    body {</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">font-family</span><span class="ch">:</span> <span class="dv">system-ui</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">background</span><span class="ch">:</span> <span class="cn">#0b1120</span><span class="op">;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">color</span><span class="ch">:</span> <span class="cn">#f8fafc</span><span class="op">;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      <span class="kw">margin</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">padding</span><span class="ch">:</span> <span class="dv">24</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.container</span> { <span class="kw">max-width</span><span class="ch">:</span> <span class="dv">860</span><span class="dt">px</span><span class="op">;</span> <span class="kw">margin</span><span class="ch">:</span> <span class="dv">0</span> <span class="bu">auto</span><span class="op">;</span> }</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.card</span> {</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>      <span class="kw">background</span><span class="ch">:</span> <span class="cn">#162032</span><span class="op">;</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border</span><span class="ch">:</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#334460</span><span class="op">;</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border-radius</span><span class="ch">:</span> <span class="dv">8</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>      <span class="kw">padding</span><span class="ch">:</span> <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>      <span class="kw">margin-bottom</span><span class="ch">:</span> <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    input<span class="ex">[</span><span class="ss">type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ex">]</span><span class="op">,</span> input<span class="ex">[</span><span class="ss">type</span><span class="op">=</span><span class="st">&quot;password&quot;</span><span class="ex">]</span> {</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>      <span class="kw">background</span><span class="ch">:</span> <span class="cn">#0b1120</span><span class="op">;</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border</span><span class="ch">:</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#334460</span><span class="op">;</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>      <span class="kw">color</span><span class="ch">:</span> <span class="cn">#fff</span><span class="op">;</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>      <span class="kw">padding</span><span class="ch">:</span> <span class="dv">8</span><span class="dt">px</span> <span class="dv">12</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border-radius</span><span class="ch">:</span> <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>      <span class="kw">width</span><span class="ch">:</span> <span class="dv">260</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    button {</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">background</span><span class="ch">:</span> <span class="cn">#38bdf8</span><span class="op">;</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>      <span class="kw">color</span><span class="ch">:</span> <span class="cn">#0b1120</span><span class="op">;</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>      <span class="kw">padding</span><span class="ch">:</span> <span class="dv">8</span><span class="dt">px</span> <span class="dv">16</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border-radius</span><span class="ch">:</span> <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>      <span class="kw">font-weight</span><span class="ch">:</span> <span class="dv">bold</span><span class="op">;</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>      <span class="kw">cursor</span><span class="ch">:</span> <span class="dv">pointer</span><span class="op">;</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>    button<span class="in">:hover</span> { <span class="kw">background</span><span class="ch">:</span> <span class="cn">#7dd3fc</span><span class="op">;</span> }</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.flash</span> { <span class="kw">color</span><span class="ch">:</span> <span class="cn">#facc15</span><span class="op">;</span> <span class="kw">margin-bottom</span><span class="ch">:</span> <span class="dv">12</span><span class="dt">px</span><span class="op">;</span> }</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* SVG Map Styles */</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.map-frame</span> {</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>      <span class="kw">width</span><span class="ch">:</span> <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>      <span class="kw">height</span><span class="ch">:</span> <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>      <span class="kw">background</span><span class="ch">:</span> <span class="cn">#030712</span><span class="op">;</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border</span><span class="ch">:</span> <span class="dv">1</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">#334460</span><span class="op">;</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>      <span class="kw">border-radius</span><span class="ch">:</span> <span class="dv">6</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>      <span class="kw">display</span><span class="ch">:</span> <span class="dv">block</span><span class="op">;</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.grid-line</span> { <span class="kw">stroke</span><span class="ch">:</span> <span class="cn">#1e293b</span><span class="op">;</span> stroke-width<span class="ch">:</span> <span class="dv">1</span><span class="op">;</span> }</span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.ping</span> {</span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>      <span class="kw">fill</span><span class="ch">:</span> <span class="cn">#38bdf8</span><span class="op">;</span></span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>      <span class="kw">stroke</span><span class="ch">:</span> <span class="cn">#ffffff</span><span class="op">;</span></span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>      stroke-width<span class="ch">:</span> <span class="dv">1.5</span><span class="op">;</span></span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>      <span class="kw">transition</span><span class="ch">:</span> <span class="dv">r 0.2</span><span class="dt">s</span><span class="op">;</span></span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">.ping</span><span class="in">:hover</span> { r<span class="ch">:</span> <span class="dv">8</span><span class="op">;</span> <span class="kw">fill</span><span class="ch">:</span> <span class="cn">#facc15</span><span class="op">;</span> }</span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&lt;/</span><span class="kw">style</span><span class="dt">&gt;</span></span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">head</span><span class="dt">&gt;</span></span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">body</span><span class="dt">&gt;</span></span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;container&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>  <span class="co">&lt;!-- Flash Messages --&gt;</span></span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>  {% with messages = get_flashed_messages() %}</span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a>    {% if messages %}</span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;flash&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>        {% for message in messages %}</span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;</span>{{ message }}<span class="dt">&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>        {% endfor %}</span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a>    {% endif %}</span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>  {% endwith %}</span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>  {% if mode == &quot;register&quot; %}</span>
+<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;card&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">h2</span><span class="dt">&gt;</span>Register<span class="dt">&lt;/</span><span class="kw">h2</span><span class="dt">&gt;</span></span>
+<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">form</span><span class="ot"> method</span><span class="op">=</span><span class="st">&quot;POST&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">input</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;username&quot;</span><span class="ot"> placeholder</span><span class="op">=</span><span class="st">&quot;Username&quot;</span><span class="ot"> required</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">input</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;password&quot;</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;password&quot;</span><span class="ot"> placeholder</span><span class="op">=</span><span class="st">&quot;Password&quot;</span><span class="ot"> required</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">button</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;submit&quot;</span><span class="dt">&gt;</span>Create Account<span class="dt">&lt;/</span><span class="kw">button</span><span class="dt">&gt;</span></span>
+<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">form</span><span class="dt">&gt;</span></span>
+<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">small</span><span class="dt">&gt;</span>Already registered? <span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;/login&quot;</span><span class="ot"> style</span><span class="op">=</span><span class="st">&quot;color:#38bdf8;&quot;</span><span class="dt">&gt;</span>Login here<span class="dt">&lt;/</span><span class="kw">a</span><span class="dt">&gt;&lt;/</span><span class="kw">small</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a>  {% elif mode == &quot;login&quot; %}</span>
+<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;card&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">h2</span><span class="dt">&gt;</span>Login<span class="dt">&lt;/</span><span class="kw">h2</span><span class="dt">&gt;</span></span>
+<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">form</span><span class="ot"> method</span><span class="op">=</span><span class="st">&quot;POST&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">input</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;username&quot;</span><span class="ot"> placeholder</span><span class="op">=</span><span class="st">&quot;Username&quot;</span><span class="ot"> required</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">input</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;password&quot;</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;password&quot;</span><span class="ot"> placeholder</span><span class="op">=</span><span class="st">&quot;Password&quot;</span><span class="ot"> required</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">button</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;submit&quot;</span><span class="dt">&gt;</span>Sign In<span class="dt">&lt;/</span><span class="kw">button</span><span class="dt">&gt;</span></span>
+<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">form</span><span class="dt">&gt;</span></span>
+<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">small</span><span class="dt">&gt;</span>Need an account? <span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;/register&quot;</span><span class="ot"> style</span><span class="op">=</span><span class="st">&quot;color:#38bdf8;&quot;</span><span class="dt">&gt;</span>Register here<span class="dt">&lt;/</span><span class="kw">a</span><span class="dt">&gt;&lt;/</span><span class="kw">small</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-97"><a href="#cb8-97" aria-hidden="true" tabindex="-1"></a>  {% else %}</span>
+<span id="cb8-98"><a href="#cb8-98" aria-hidden="true" tabindex="-1"></a>    <span class="co">&lt;!-- Dashboard Mode --&gt;</span></span>
+<span id="cb8-99"><a href="#cb8-99" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> style</span><span class="op">=</span><span class="st">&quot;display: flex; justify-content: space-between; align-items: center;&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-100"><a href="#cb8-100" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">h2</span><span class="dt">&gt;</span>ThreatMap Dashboard (Welcome, {{ session[&#39;username&#39;] }})<span class="dt">&lt;/</span><span class="kw">h2</span><span class="dt">&gt;</span></span>
+<span id="cb8-101"><a href="#cb8-101" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;/logout&quot;</span><span class="ot"> style</span><span class="op">=</span><span class="st">&quot;color:#f87171;&quot;</span><span class="dt">&gt;</span>Logout<span class="dt">&lt;/</span><span class="kw">a</span><span class="dt">&gt;</span></span>
+<span id="cb8-102"><a href="#cb8-102" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-103"><a href="#cb8-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-104"><a href="#cb8-104" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;card&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-105"><a href="#cb8-105" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">form</span><span class="ot"> method</span><span class="op">=</span><span class="st">&quot;POST&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-106"><a href="#cb8-106" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">label</span><span class="ot"> for</span><span class="op">=</span><span class="st">&quot;ip&quot;</span><span class="dt">&gt;</span>Lookup Public IP:<span class="dt">&lt;/</span><span class="kw">label</span><span class="dt">&gt;</span></span>
+<span id="cb8-107"><a href="#cb8-107" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">input</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;text&quot;</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;ip&quot;</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;ip&quot;</span><span class="ot"> placeholder</span><span class="op">=</span><span class="st">&quot;e.g. 8.8.8.8&quot;</span><span class="ot"> required</span><span class="dt">&gt;</span></span>
+<span id="cb8-108"><a href="#cb8-108" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">button</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;submit&quot;</span><span class="dt">&gt;</span>Plot on Map<span class="dt">&lt;/</span><span class="kw">button</span><span class="dt">&gt;</span></span>
+<span id="cb8-109"><a href="#cb8-109" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">form</span><span class="dt">&gt;</span></span>
+<span id="cb8-110"><a href="#cb8-110" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-111"><a href="#cb8-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-112"><a href="#cb8-112" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;card&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-113"><a href="#cb8-113" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">h3</span><span class="dt">&gt;</span>Plotted Visualisation (800 x 400 SVG Canvas)<span class="dt">&lt;/</span><span class="kw">h3</span><span class="dt">&gt;</span></span>
+<span id="cb8-114"><a href="#cb8-114" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">svg</span><span class="ot"> viewBox</span><span class="op">=</span><span class="st">&quot;0 0 800 400&quot;</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;map-frame&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-115"><a href="#cb8-115" aria-hidden="true" tabindex="-1"></a>        <span class="co">&lt;!-- Equator and Prime Meridian Reference Grids --&gt;</span></span>
+<span id="cb8-116"><a href="#cb8-116" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">line</span><span class="ot"> x1</span><span class="op">=</span><span class="st">&quot;0&quot;</span><span class="ot"> y1</span><span class="op">=</span><span class="st">&quot;200&quot;</span><span class="ot"> x2</span><span class="op">=</span><span class="st">&quot;800&quot;</span><span class="ot"> y2</span><span class="op">=</span><span class="st">&quot;200&quot;</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;grid-line&quot;</span><span class="ot"> stroke-dasharray</span><span class="op">=</span><span class="st">&quot;4&quot;</span><span class="ot"> </span><span class="dt">/&gt;</span></span>
+<span id="cb8-117"><a href="#cb8-117" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;</span><span class="kw">line</span><span class="ot"> x1</span><span class="op">=</span><span class="st">&quot;400&quot;</span><span class="ot"> y1</span><span class="op">=</span><span class="st">&quot;0&quot;</span><span class="ot"> x2</span><span class="op">=</span><span class="st">&quot;400&quot;</span><span class="ot"> y2</span><span class="op">=</span><span class="st">&quot;400&quot;</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;grid-line&quot;</span><span class="ot"> stroke-dasharray</span><span class="op">=</span><span class="st">&quot;4&quot;</span><span class="ot"> </span><span class="dt">/&gt;</span></span>
+<span id="cb8-118"><a href="#cb8-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-119"><a href="#cb8-119" aria-hidden="true" tabindex="-1"></a>        <span class="co">&lt;!-- Render each database point dynamically --&gt;</span></span>
+<span id="cb8-120"><a href="#cb8-120" aria-hidden="true" tabindex="-1"></a>        {% for point in history %}</span>
+<span id="cb8-121"><a href="#cb8-121" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&lt;</span><span class="kw">circle</span><span class="ot"> cx</span><span class="op">=</span><span class="st">&quot;{{ point.x }}&quot;</span><span class="ot"> cy</span><span class="op">=</span><span class="st">&quot;{{ point.y }}&quot;</span><span class="ot"> r</span><span class="op">=</span><span class="st">&quot;5&quot;</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;ping&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-122"><a href="#cb8-122" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&lt;</span><span class="kw">title</span><span class="dt">&gt;</span>{{ point.ip }} — {{ point.city }}, {{ point.country }}<span class="dt">&lt;/</span><span class="kw">title</span><span class="dt">&gt;</span></span>
+<span id="cb8-123"><a href="#cb8-123" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&lt;/</span><span class="kw">circle</span><span class="dt">&gt;</span></span>
+<span id="cb8-124"><a href="#cb8-124" aria-hidden="true" tabindex="-1"></a>        {% endfor %}</span>
+<span id="cb8-125"><a href="#cb8-125" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">svg</span><span class="dt">&gt;</span></span>
+<span id="cb8-126"><a href="#cb8-126" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;&lt;</span><span class="kw">small</span><span class="ot"> style</span><span class="op">=</span><span class="st">&quot;color: #94a3b8;&quot;</span><span class="dt">&gt;</span>Hover over any marker to inspect IP address metadata.<span class="dt">&lt;/</span><span class="kw">small</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb8-127"><a href="#cb8-127" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-128"><a href="#cb8-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-129"><a href="#cb8-129" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">&quot;card&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb8-130"><a href="#cb8-130" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">h3</span><span class="dt">&gt;</span>Lookup Log<span class="dt">&lt;/</span><span class="kw">h3</span><span class="dt">&gt;</span></span>
+<span id="cb8-131"><a href="#cb8-131" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;</span><span class="kw">ul</span><span class="dt">&gt;</span></span>
+<span id="cb8-132"><a href="#cb8-132" aria-hidden="true" tabindex="-1"></a>        {% for item in history %}</span>
+<span id="cb8-133"><a href="#cb8-133" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&lt;</span><span class="kw">li</span><span class="dt">&gt;&lt;</span><span class="kw">strong</span><span class="dt">&gt;</span>{{ item.ip }}<span class="dt">&lt;/</span><span class="kw">strong</span><span class="dt">&gt;</span>: {{ item.city }}, {{ item.country }} (Coordinates: {{ item.lat }}, {{ item.lon }})<span class="dt">&lt;/</span><span class="kw">li</span><span class="dt">&gt;</span></span>
+<span id="cb8-134"><a href="#cb8-134" aria-hidden="true" tabindex="-1"></a>        {% else %}</span>
+<span id="cb8-135"><a href="#cb8-135" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&lt;</span><span class="kw">li</span><span class="dt">&gt;</span>No queries yet. Submit an IP above to begin plotting.<span class="dt">&lt;/</span><span class="kw">li</span><span class="dt">&gt;</span></span>
+<span id="cb8-136"><a href="#cb8-136" aria-hidden="true" tabindex="-1"></a>        {% endfor %}</span>
+<span id="cb8-137"><a href="#cb8-137" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&lt;/</span><span class="kw">ul</span><span class="dt">&gt;</span></span>
+<span id="cb8-138"><a href="#cb8-138" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-139"><a href="#cb8-139" aria-hidden="true" tabindex="-1"></a>  {% endif %}</span>
+<span id="cb8-140"><a href="#cb8-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-141"><a href="#cb8-141" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
+<span id="cb8-142"><a href="#cb8-142" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">body</span><span class="dt">&gt;</span></span>
+<span id="cb8-143"><a href="#cb8-143" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">html</span><span class="dt">&gt;</span></span></code></pre></div>
+<hr />
+<h1 id="step-5-testing-your-full-application">Step 5: Testing Your Full
+Application</h1>
+<ol type="1">
+<li><p>Make sure your virtual environment is active in your
+terminal.</p></li>
+<li><p>Start the server:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> app.py</span></code></pre></div></li>
+<li><p>Open your browser and navigate to:</p>
+<pre><code>http://127.0.0.1:5001/register</code></pre></li>
+<li><p>Register a test user account.</p></li>
+<li><p>Log in. You will land on the interactive dashboard.</p></li>
+<li><p>Test your input boundaries:</p>
+<ul>
+<li>Enter a known public DNS IP: <code>8.8.8.8</code> (Google,
+California). It should plot in North America.</li>
+<li>Enter another public IP: <code>1.1.1.1</code> (Cloudflare,
+Australia). It should plot in the Southern Hemisphere.</li>
+<li>Enter <code>127.0.0.1</code> or <code>192.168.1.1</code>. Notice how
+your SSRF guard rejects it and preserves system integrity.</li>
+</ul></li>
+</ol>
+<hr />
+<h1 id="homework-independent-expansion-tasks-3-hours">Homework &amp;
+Independent Expansion Tasks (~3 Hours)</h1>
+<p>Now that you have an end-to-end working system, build on this
+foundation during your independent study hours:</p>
+<h3 id="task-1-add-a-real-vector-world-map-1-hour">Task 1: Add a Real
+Vector World Map (1 Hour)</h3>
+<p>Currently, our SVG map uses crosshairs on a blank background. You can
+embed continent outlines into your SVG canvas: * Download a
+low-complexity, equirectangular world map SVG path (such as public
+domain outlines from Wikimedia Commons). * Copy the
+<code>&lt;path d=&quot;...&quot; /&gt;</code> element and paste it into your
+<code>&lt;svg&gt;</code> canvas <em>before</em> the plotted circles so
+the markers appear on top of the land masses. * Apply a dark fill color
+to the land (e.g., <code>#1e293b</code>) and a thin border
+(<code>#334460</code>).</p>
+<h3 id="task-2-solve-the-same-city-stacking-problem-1-hour">Task 2:
+Solve the “Same City” Stacking Problem (1 Hour)</h3>
+<p>If you lookup multiple IP addresses originating from London, every
+marker stacks directly on top of <code>(400, 115)</code>, hiding past
+queries. * Update your Python code to detect if an <code>(x, y)</code>
+coordinate is already present in the list. * If it is, apply a slight
+offset (e.g., add
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>+</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">+3</annotation></semantics></math>
+pixels to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>)
+so overlapping queries fan out and remain visible.</p>
+<h3 id="task-3-add-ping-pulse-animations-with-css-1-hour">Task 3: Add
+Ping Pulse Animations with CSS (1 Hour)</h3>
+<ul>
+<li><p>Using standard CSS <code>@keyframes</code>, animate the markers
+so that the newest plotted node expands and fades out like a radar
+blip:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode css"><code class="sourceCode css"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">@keyframes</span> pulse {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">0%</span> { r<span class="ch">:</span> <span class="dv">4</span><span class="op">;</span> <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">1</span><span class="op">;</span> }</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">100%</span> { r<span class="ch">:</span> <span class="dv">16</span><span class="op">;</span> <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span> }</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div></li>
+<li><p>Add a second transparent circle under each point that runs this
+animation continuously.</p></li>
+</ul>
+<h3 id="external-resources-further-reading">External Resources &amp;
+Further Reading</h3>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial">MDN Web
+Docs: SVG Tutorial</a></li>
+<li><a href="https://pubs.usgs.gov/pp/1395/report.pdf">Equirectangular
+Projection Explained (USGS)</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html">OWASP
+Server-Side Request Forgery Prevention Cheat Sheet</a></li>
+</ul>
+</body>
+</html>

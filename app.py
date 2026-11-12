@@ -88,7 +88,7 @@ def register():
             flash("Username already exists.")
             return redirect(url_for("register"))
 
-    return render_template("index.html", mode="register")
+    return render_template("index.html.j2", mode="register")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -110,7 +110,7 @@ def login():
         flash("Invalid username or password.")
         return redirect(url_for("login"))
 
-    return render_template("index.html", mode="login")
+    return render_template("index.html.j2", mode="login")
 
 
 @app.route("/logout")
@@ -205,7 +205,7 @@ def dashboard():
             (session["user_id"],),
         ).fetchall()
 
-    return render_template("index.html", mode="dashboard", history=history)
+    return render_template("index.html.j2", mode="dashboard", history=history)
 
 
 if __name__ == "__main__":
